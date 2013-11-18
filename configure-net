@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+import os.path
+from optparse import OptionParser
+import libvirt
+
+template_dir = '/opt/template'
+
+def iso_template(name, bridge, ip_addr, netmask, start, end):
+    network=""" 
+  <network>
+  <name>%s</name>
+  <forward mode='route'/>
+  <bridge name='%s' stp='off' delay='0' />
+  <ip address='%s' netmask='%s'>
+    <dhcp>
+      <range start='%s' end='%s' />
+    </dhcp>
+  </ip>
+   </network>
+    """ % (name, bridge, ip_addr, netmask, start, end)
+    return network
+
+def main():
+    parser = OptionParser() 
+    parser.add_option("-a", "--name", dest="name", help="The name of your network")
+    parser.add_option("-n", "--network", dest="network", default=True, help="The network define in your network")
+    (options, args) = parser.parse_args() 
+
+    opt_network = options.network.split(".")[:-1]
+    netbase=""
+    for net in opt_network:
+        netbase += net + "."
+    netmask = "255.255.255.0"
+    ip_addr = netbase + "1"
+    start = netbase + "2"
+    end = netbase + "254"
+        
+    network = iso_template(options.name, options.name, ip_addr, netmask, start, end) 
+    conn=libvirt.open("qemu:///system")
+     
+    network = conn.networkDefineXML(network)
+
+if __name__ == '__main__':
+    main()

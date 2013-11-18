@@ -1,0 +1,146 @@
+#!/bin/bash
+#
+# Copyright 2013 UnitedStack, wentian.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+set -e
+
+SCRIPT_NAME=$(basename $0)
+SCRIPT_HOME=$(dirname $0)
+NETWORK_AVAILABLE=1
+DEFAULT_CIDR=10.92.0.0
+
+function show_options(){
+      echo "Usage $SCRIPT_NAME [options] command name"
+      echo 
+      echo "Manage uos environment by send different commands"
+      echo 
+      echo "Options:"
+      echo "      -n network    			-- set network of your UOS"
+      echo "      -i image(option when vm-create)       -- set the path of iso for your vm"
+      echo "User Command:"
+      echo "      -i path vm-create    -- command to create a vm"
+      echo "      vm-destroy   -- command to destroy a vm"
+      echo "Admin Command:"
+      echo "      net-show      -- command to show all network"
+      echo "      net-create    -- command to create a network"
+      echo "      net-destroy   -- command to destroy a network"
+      exit 0
+}
+
+while [ $# -gt 0 ]
+do
+     case $1 in
+     -n) NETWORK=$2; shift 2;;
+     -i) IMAGE=$2; shift 2;;
+     -h) show_options;;
+     --) shift break;;
+     *) COMMAND=$1; NAME=$2; shift 2;;
+     esac
+done
+
+function setup_network(){
+     check_network
+     if [ $NETWORK_AVAILABLE == 1 ]
+     then
+         virsh net-list --all | grep $NAME > /dev/NULL && echo "Network already exist, please choose another one" && exit 0 
+         echo "Begin to create network $NETWORK $NAME"
+         configure-net --network $NETWORK \
+                       --name $NAME
+         virsh net-start $NAME 
+         virsh net-autostart $NAME
+         echo "Network created as $NETWORK $NAME"
+         virsh net-list --all
+         show_network
+     else
+         echo "Network can not be use, choose CIDR in $DEFAULT_CIDR" && exit 0 
+     fi
+}
+
+function get_unused_ip(){
+     echo "Get Unused Ip Addr"
+}
+
+function check_network(){
+     in1=`echo $NETWORK | cut -d "." -f 1`
+     in2=`echo $NETWORK | cut -d "." -f 2`
+     in3=`echo $NETWORK | cut -d "." -f 4`
+     dn1=`echo $DEFAULT_CIDR | cut -d "." -f 1`
+     dn2=`echo $DEFAULT_CIDR | cut -d "." -f 2`
+     if [[ $in1 == $dn1 && $in2 == $dn2 && $in3 == "0" ]] 
+     then
+         NETWORK_AVAILABLE=1
+     else
+         NETWORK_AVAILABLE=0
+     fi
+}
+
+function destroy_network(){
+     echo "Destroy Network $NAME"
+     virsh net-destroy $NAME 
+     virsh net-undefine $NAME
+}
+
+function create_vm(){
+     echo "Create image for you at /home/images/$NAME.img"
+     qemu-img create /home/images/$NAME.img 50G
+     echo "Create VM $NAME With $NETWORK for you"
+     configure-vm --name $NAME \
+                  --iso $IMAGE \
+                  --network $NAME 
+     virsh start $NAME
+     virsh autostart $NAME 
+     vnc_port=`virsh vncdisplay wentian | cut -d : -f 2`
+     echo "VM created as $NAME vnc is 192.168.10.3:$vnc_port"
+     virsh list --all
+}
+
+function show_network(){
+     echo "Show all networks"
+     echo "NETWORK     IPADDR"
+     echo "-------------------------------"
+     ALL_NETWORK=`virsh net-list --all | cut -d " " -f 1 | grep "[^--|default|Name]"`  
+     for NET in $ALL_NETWORK
+     do
+         IP_ADDR=`ifconfig $NET | grep "inet addr:" | awk  '{print $2}' | cut -d ":" -f 2`
+         echo "$NET $IP_ADDR"
+     done
+}
+
+function destroy_vm(){
+     echo "Destroy VM $NAME"
+     rm -rf /home/images/$NAME.img
+     virsh destroy $NAME
+     virsh undefine $NAME 
+}
+
+if [ $COMMAND == 'net-create' ]
+then
+    setup_network
+elif [ $COMMAND == 'net-destroy' ]
+then
+    destroy_network
+elif [ $COMMAND == 'net-show' ]
+then
+    show_network
+elif [ $COMMAND == 'vm-create' ]
+then
+    create_vm
+elif [ $COMMAND == 'vm-destroy' ]
+then 
+    destroy_vm
+else
+    echo "unsupport commands"
+fi
