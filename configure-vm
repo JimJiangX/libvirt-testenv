@@ -5,7 +5,7 @@ from optparse import OptionParser
 import libvirt
 
 template_dir = '/opt/template/'
-image_base_dir = '/home/images/'
+image_base_dir = '/home/ssd/'
 
 def vm_template(name, memory, cpus, cdrom, imagefile, net):
     vm=""" 

@@ -94,8 +94,8 @@ function destroy_network(){
 }
 
 function create_vm(){
-     echo "Create image for you at /home/images/$NAME.img"
-     qemu-img create /home/images/$NAME.img 50G
+     echo "Create image for you at /home/ssd/$NAME.img"
+     qemu-img create /home/ssd/$NAME.img 50G
      echo "Create VM $NAME With $NETWORK for you"
      configure-vm --name $NAME \
                   --iso $IMAGE \
@@ -121,7 +121,7 @@ function show_network(){
 
 function destroy_vm(){
      echo "Destroy VM $NAME"
-     rm -rf /home/images/$NAME.img
+     rm -rf /home/ssd/$NAME.img
      virsh destroy $NAME
      virsh undefine $NAME 
 }

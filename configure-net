@@ -6,19 +6,16 @@ import libvirt
 
 template_dir = '/opt/template'
 
-def iso_template(name, bridge, ip_addr, netmask, start, end):
+def iso_template(name, bridge, ip_addr, netmask):
     network=""" 
   <network>
   <name>%s</name>
   <forward mode='route'/>
   <bridge name='%s' stp='off' delay='0' />
   <ip address='%s' netmask='%s'>
-    <dhcp>
-      <range start='%s' end='%s' />
-    </dhcp>
   </ip>
    </network>
-    """ % (name, bridge, ip_addr, netmask, start, end)
+    """ % (name, bridge, ip_addr, netmask)
     return network
 
 def main():
@@ -33,10 +30,8 @@ def main():
         netbase += net + "."
     netmask = "255.255.255.0"
     ip_addr = netbase + "1"
-    start = netbase + "2"
-    end = netbase + "254"
         
-    network = iso_template(options.name, options.name, ip_addr, netmask, start, end) 
+    network = iso_template(options.name, options.name, ip_addr, netmask) 
     conn=libvirt.open("qemu:///system")
      
     network = conn.networkDefineXML(network)
