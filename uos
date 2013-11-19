@@ -99,12 +99,29 @@ function create_vm(){
      echo "Create VM $NAME With $NETWORK for you"
      configure-vm --name $NAME \
                   --iso $IMAGE \
-                  --network $NAME 
+                  --network $NAME \
+                  --type "uos"
      virsh start $NAME
      virsh autostart $NAME 
      vnc_port=`virsh vncdisplay $NAME | cut -d : -f 2`
      echo "VM created as $NAME vnc is 192.168.10.3:$vnc_port"
      virsh list --all
+}
+
+function create_bm(){
+     BM_NAME="bm-"$NAME"-$RANDOM"
+     echo "Create image for you at /home/ssd/$BM_NAME.img"
+     qemu-img create /home/ssd/$BM_NAME.img 50G
+     echo "Create VM $BM_NAME With $NETWORK for you"
+     configure-vm --name $BM_NAME \
+                  --network $NAME \
+                  --type "bm"
+     virsh start $BM_NAME
+     virsh autostart $BM_NAME 
+     vnc_port=`virsh vncdisplay $BM_NAME | cut -d : -f 2`
+     echo "VM created as $BM_NAME vnc is 192.168.10.3:$vnc_port"
+     virsh list --all
+
 }
 
 function show_network(){
@@ -138,6 +155,9 @@ then
 elif [ $COMMAND == 'vm-create' ]
 then
     create_vm
+elif [ $COMMAND == 'bm-create' ]
+then
+    create_bm
 elif [ $COMMAND == 'vm-destroy' ]
 then 
     destroy_vm
