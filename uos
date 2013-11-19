@@ -102,7 +102,7 @@ function create_vm(){
                   --network $NAME 
      virsh start $NAME
      virsh autostart $NAME 
-     vnc_port=`virsh vncdisplay wentian | cut -d : -f 2`
+     vnc_port=`virsh vncdisplay $NAME | cut -d : -f 2`
      echo "VM created as $NAME vnc is 192.168.10.3:$vnc_port"
      virsh list --all
 }
