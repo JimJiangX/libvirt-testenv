@@ -19,6 +19,7 @@ set -e
 
 SCRIPT_NAME=$(basename $0)
 SCRIPT_HOME=$(dirname $0)
+IMAGE=/home/uos/dailybuild/uOS.iso
 NETWORK_AVAILABLE=1
 DEFAULT_CIDR=10.92.0.0
 
@@ -31,7 +32,7 @@ function show_options(){
       echo "      -n network    			-- set network of your UOS"
       echo "      -i image(option when vm-create)       -- set the path of iso for your vm"
       echo "User Command:"
-      echo "      -i path vm-create    -- command to create a vm"
+      echo "      vm-create    -- command to create a vm"
       echo "      vm-destroy   -- command to destroy a vm"
       echo "Admin Command:"
       echo "      net-show      -- command to show all network"
